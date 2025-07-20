@@ -2,8 +2,10 @@ package common
 
 import (
 	"github.com/London57/todo-app/pkg/logger"
+	"github.com/go-playground/validator/v10"
 )
 
 type BaseController struct {
-	Logger logger.Interface
+	L logger.Interface
+	V *validator.Validate
 }
