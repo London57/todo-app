@@ -3,11 +3,11 @@ package repo
 import (
 	"context"
 
-	"github.com/London57/todo-app/internal/entity"
+	"github.com/London57/todo-app/internal/domain"
 )
 
 type (
 	UserRepo interface {
-		CreateUser(context.Context, entity.User) (int, error)
+		CreateUser(context.Context, domain.User) (int, error)
 	}
 )

@@ -3,7 +3,8 @@ package todo
 import (
 	"context"
 	"net/http"
-	"time"
+
+	"github.com/London57/todo-app/internal/usecase/auth"
 )
 
 type Server struct {
@@ -11,13 +12,14 @@ type Server struct {
 }
 
 func (s *Server) Run(port string, handler http.Handler) error {
-	s.httpServer = &http.Server{
-		Addr:         "127.0.0.1:" + port,
-		Handler:      handler,
-		ReadTimeout:  4 * time.Second,
-		WriteTimeout: 4 * time.Second,
-	}
-	return s.httpServer.ListenAndServe()
+	// s.httpServer = &http.Server{
+	// 	Addr:         "127.0.0.1:" + port,
+	// 	Handler:      handler,
+	// 	ReadTimeout:  4 * time.Second,
+	// 	WriteTimeout: 4 * time.Second,
+	// }
+	auth.RegisterUserByUsername()
+	// return s.httpServer.ListenAndServe()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
