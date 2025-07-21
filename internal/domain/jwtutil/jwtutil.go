@@ -9,10 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func CreateAccessToken(user *domain.User, secret string, expiry int) (string, error) {
+func CreateAccessToken(user domain.User, secret string, expiry int) (string, error) {
 	exp := time.Now().Add(time.Hour * time.Duration(expiry))
-	claims := &domain.JwtCustomClaims{
-		ID: user.ID.String(),
+	claims := &JwtCustomClaims{
+		ID:       user.ID.String(),
 		Username: user.Username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(exp),
@@ -26,9 +26,9 @@ func CreateAccessToken(user *domain.User, secret string, expiry int) (string, er
 	return t, nil
 }
 
-func CreateRefreshToken(user *domain.User, secret string, expiry int) (string, error) {
+func CreateRefreshToken(user domain.User, secret string, expiry int) (string, error) {
 	exp := time.Now().Add(time.Hour * time.Duration(expiry))
-	claimsRefresh := &domain.JwtCustomRefreshClaims{
+	claimsRefresh := &JwtCustomRefreshClaims{
 		ID: user.ID.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(exp),
@@ -52,7 +52,7 @@ func IsAuthorized(requestToken string, secret string) (bool, error) {
 	if err != nil {
 		jwt_error := err.(jwt.ValidationError)
 
-		if jwt_error.Errors & jwt.ValidationErrorExpired != 0 {
+		if jwt_error.Errors&jwt.ValidationErrorExpired != 0 {
 			return false, errors.New("token expired")
 		}
 		return false, fmt.Errorf("failed to parse jwt: %v", err)
@@ -74,6 +74,6 @@ func ExtractIDFromToken(requestToken string, secret string) (string, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
 		return "", fmt.Errorf("token is invalid")
-	} 
+	}
 	return claims["id"].(string), nil
 }

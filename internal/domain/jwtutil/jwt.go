@@ -1,11 +1,11 @@
-package domain
+package jwtutil
 
 import "github.com/golang-jwt/jwt/v4"
 
 type (
 	JwtCustomClaims struct {
 		jwt.RegisteredClaims
-		ID string `json:"id"`
+		ID       string `json:"id"`
 		Username string `json:"username"`
 	}
 	JwtCustomRefreshClaims struct {
@@ -13,4 +13,3 @@ type (
 		ID string `json:"id"`
 	}
 )
-

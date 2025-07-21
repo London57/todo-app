@@ -2,92 +2,173 @@ package auth
 
 import (
 	"context"
-	"net"
+	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/London57/todo-app/internal/controller/http/error"
 	"github.com/London57/todo-app/internal/domain"
+	"github.com/London57/todo-app/internal/domain/signup"
+	"golang.org/x/oauth2"
 
 	"github.com/gin-gonic/gin"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/gothic"
-	"github.com/markbates/goth/providers/google"
 )
 
 func (c *AuthController) SignUp(r *gin.Context) {
-	var user domain.UserRequest
+	var user signup.SignUpRequest
 	if err := r.ShouldBindJSON(&user); err != nil {
 		error.ErrorResponse(r, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	user_from_bd, err := c.GetUserByEmail(r, user.Email)
+	if err == nil && (user_from_bd != domain.User{}) {
+		error.ErrorResponse(r, http.StatusConflict, "user with this email already exists")
+		return
+	}
 
-	id, err := c.RegisterUserByUsername(r.Request.Context(), domain.User{
-		Name: user.Name,
+	id, err := c.CreateUser(r, domain.User{
+		Name:     user.Name,
 		Username: user.Username,
 		Password: user.Password,
 	})
 	if err != nil {
 		error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+		return
 	}
-	_ = id
-	return
-}
-func (c *AuthController) SignIn(r *gin.Context) {}
-
-
-const (
-	maxAge = 86400 * 30
-	isProd = false
-)
-
-func (c *AuthController) OAuth2(r *gin.Context) {
-	// store := sessions.NewCookieStore([]byte(c.extra_data["Key"]))
-	googleClientId := c.extra_data["Google_Client_Id"] 
-	googleClientSecret := c.extra_data["Google_Client_Secret"]
-	// store.Options.Path = "/"
-	// store.Options.HttpOnly = true
-	// store.Options.Secure = isProd
-	// store.MaxAge(maxAge)
-
-	// gothic.Store = store
-
-	var scheme string
-	req := r.Request
-	if req.TLS != nil {
-		scheme = "https://"
-	} else {			
-		scheme = "http://"
+	domain_user := domain.User{
+		ID:       id,
+		Name:     user.Name,
+		Username: user.Username,
 	}
-	goth.UseProviders(
-		google.New(googleClientId, googleClientSecret, scheme + "api/v1/auth/google/callback", req.Context().Value(http.LocalAddrContextKey).(net.Addr).String()), 
+	access_token, err := c.CreateAccessToken(
+		domain_user, c.env.JWT.AccessTokenSecret, c.env.JWT.AccessTokenExpiryHour,
 	)
-	gothic.BeginAuthHandler(r.Writer, r.Request)
-}
-
-func (c *AuthController) AuthCallback(r *gin.Context) {
-	provider := r.Param("provider")
-	req := r.Request
-	req = req.WithContext(context.WithValue(req.Context(), "provider", provider))
-
-	user_data, err := gothic.CompleteUserAuth(r.Writer, r.Request)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusBadRequest, "failed to register")
+		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error")
 		return
 	}
 
-	user := domain.User {
-		Name: user_data.Name,
-		Username: user_data.NickName,
+	refresh_token, err := c.CreateRefreshToken(
+		domain_user, c.env.JWT.RefreshTokenSecret, c.env.JWT.RefreshTokenExpiryHour,
+	)
+	if err != nil {
+		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error")
+		return
+	}
+	signupResponse := signup.SignUpResponse{
+		AccessToken:  access_token,
+		RefreshToken: refresh_token,
+	}
+	r.JSON(http.StatusCreated, signupResponse)
+
+}
+
+func (c *AuthController) SignIn(r *gin.Context) {}
+
+var oauthConfig *oauth2.Config
+
+func (c *AuthController) OAuth2(r *gin.Context) {
+	var config *oauth2.Config
+	provider, ok := r.Params.Get("provider")
+
+	if !ok {
+		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param")
+		return
+	}
+
+	if strings.ToLower(provider) == "google" {
+		oauthConfig = InitGoogleProvider(
+			c.env.OAuth2.Google.GoogleClientId,
+			c.env.OAuth2.Google.GoogleClientSecret,
+			c.env.HTTP.Schema+c.env.HTTP.IP+":"+strconv.Itoa(c.env.HTTP.Port)+"api/v1/auth/google/callback",
+		)
+	}
+	url := config.AuthCodeURL(c.env.OAuth2.OAuthStateString)
+	r.Redirect(http.StatusFound, url)
+
+}
+
+func (c *AuthController) OAuth2Callback(r *gin.Context) {
+	provider, ok := r.Params.Get("provider")
+	if !ok {
+		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param")
+		return
+	}
+
+	state := r.Query("state")
+	if state != c.env.OAuth2.OAuthStateString {
+		error.ErrorResponse(r, http.StatusBadRequest, "invalid oauth state")
+		return
+	}
+	code := r.Query("code")
+	token, err := oauthConfig.Exchange(context.Background(), code)
+	if err != nil {
+		error.ErrorResponse(r, http.StatusBadRequest, "failed to exchange token")
+		return
+	}
+
+	var resp *http.Response
+
+	client := oauthConfig.Client(context.Background(), token)
+	if strings.ToLower(provider) == "google" {
+		resp, err = client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+		if err != nil {
+			error.ErrorResponse(r, http.StatusInternalServerError, "failed to get user info")
+			return
+		}
+	}
+	defer resp.Body.Close()
+
+	userOAuth2 := signup.SignUpOAuth2Request{}
+	if err = json.NewDecoder(resp.Body).Decode(&userOAuth2); err != nil {
+		error.ErrorResponse(r, http.StatusInternalServerError, "failedto decode user ingo")
+		return
+	}
+
+	user := domain.User{
+		Name:     userOAuth2.Name,
+		Email:    userOAuth2.Email,
+		Username: "",
 		Password: "",
 	}
-	user.CreateUser(user)
-	
 
-	var scheme string
-	if req.TLS != nil {
-		scheme = "https://"
-	} else { 
-		scheme = "http://"
+	user_from_bd, err := c.GetUserByEmail(r, user.Email)
+	if err == nil && (user_from_bd != domain.User{}) {
+		error.ErrorResponse(r, http.StatusConflict, "user with this email already exists")
+		return
 	}
-	r.Redirect(http.StatusFound, scheme + req.Context().Value(http.LocalAddrContextKey).(net.Addr).String() + "api/v1/lists/")
+	id, err := c.CreateUser(r, user)
+
+	if err != nil {
+		error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+		return
+	}
+
+	domain_user := domain.User{
+		ID:       id,
+		Name:     user.Name,
+		Username: user.Username,
+		Password: user.Password,
+	}
+	access_token, err := c.CreateAccessToken(
+		domain_user, c.env.JWT.AccessTokenSecret, c.env.JWT.AccessTokenExpiryHour,
+	)
+	if err != nil {
+		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error")
+		return
+	}
+
+	refresh_token, err := c.CreateRefreshToken(
+		domain_user, c.env.JWT.RefreshTokenSecret, c.env.JWT.RefreshTokenExpiryHour,
+	)
+	if err != nil {
+		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error")
+		return
+	}
+	signupResponse := signup.SignUpResponse{
+		AccessToken:  access_token,
+		RefreshToken: refresh_token,
+	}
+	r.JSON(http.StatusCreated, signupResponse)
 }

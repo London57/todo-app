@@ -1,24 +1,27 @@
 package http
 
 import (
+	"github.com/London57/todo-app/config"
 	"github.com/London57/todo-app/internal/controller/http/middleware"
 	v1 "github.com/London57/todo-app/internal/controller/http/v1"
-	"github.com/London57/todo-app/internal/infra/alias"
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(app *gin.Engine, c *v1.V1, extra_d alias.Extra_data) {
+func NewRouter(app *gin.Engine, c *v1.V1, env *config.Config) {
+
 	apiV1Group := app.Group("api/v1")
 
 	auth := apiV1Group.Group("/auth")
 	{
 		auth.POST("/sign-up", c.Auth.SignUp)
 		auth.POST("/sign-in", c.Auth.SignIn)
-		auth.GET("/:provider/callback")
+		auth.GET("/:provider", c.Auth.OAuth2)
+		auth.GET("/:provider/callback", c.Auth.OAuth2Callback)
+
 	}
 
 	lists := apiV1Group.Group("/lists")
-	lists.Use(middleware.JwtAuthMiddleware(extra_d["secret"]))
+	lists.Use(middleware.JwtAuthMiddleware(env.JWT.AccessTokenSecret))
 	{
 		lists.POST("/", c.List.DeleteList)
 		lists.GET("/", c.List.GetAllLists)

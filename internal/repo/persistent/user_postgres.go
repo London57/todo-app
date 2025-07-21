@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/London57/todo-app/internal/domain"
-	"github.com/London57/todo-app/internal/repo"
 	"github.com/London57/todo-app/pkg/postgres"
+	"github.com/Masterminds/squirrel"
 )
 
 type UserRepo struct {
@@ -18,12 +18,10 @@ func New(pg *postgres.Postgres) *UserRepo {
 }
 
 func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (int, error) {
-	usertable := repo.UserTable
-
 	stmt, args, err := r.Builder.
-		Insert(usertable.Name).
-		Columns(usertable.Columns...).
-		Values(user.Name, user.Username, user.Password).
+		Insert("user").
+		Columns("name", "username", "email", "password").
+		Values(user.Name, user.Username, user.Email, user.Password).
 		Suffix("returning id").
 		ToSql()
 	if err != nil {
@@ -37,4 +35,23 @@ func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (int, error
 	}
 
 	return id, nil
+}
+
+func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.User, error) {
+	stmt, args, err := r.Builder.
+		Select("*").
+		From("user").
+		Where(squirrel.Eq{"email": email}).
+		Limit(1).
+		ToSql()
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	var user domain.User
+	err = r.Pool.QueryRow(ctx, stmt, args...).Scan(&user)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return user, nil
 }
