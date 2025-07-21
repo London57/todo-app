@@ -7,7 +7,6 @@ import (
 	"github.com/London57/todo-app/internal/domain"
 	"github.com/London57/todo-app/internal/domain/jwtutil"
 	"github.com/London57/todo-app/internal/domain/password"
-	"github.com/London57/todo-app/internal/domain/signup"
 	"github.com/London57/todo-app/internal/repo"
 )
 
@@ -21,7 +20,7 @@ func New(r repo.UserRepo) *SignUpUseCase {
 	}
 }
 
-func (uc *SignUpUseCase) CreateUser(context context.Context, user signup.SignUpRequest) (int, error) {
+func (uc *SignUpUseCase) CreateUser(context context.Context, user domain.User) (int, error) {
 	var err error
 	if user.Password != "" {
 		user.Password, err = password.GeneratePasswordHash(user.Password)
@@ -37,10 +36,10 @@ func (uc *SignUpUseCase) CreateUser(context context.Context, user signup.SignUpR
 	return id, nil
 }
 
-func (uc *SignUpUseCase) GetUserByUsername(context context.Context, username string) (domain.User, error) {
-	user, err := uc.repo.GetUserByUsername(context, username)
+func (uc *SignUpUseCase) GetUserByEmail(context context.Context, email string) (domain.User, error) {
+	user, err := uc.repo.GetUserByEmail(context, email)
 	if err != nil {
-		return domain.User{}, ErrUserNotFound
+		return domain.User{}, err
 	}
 	return user, nil
 }

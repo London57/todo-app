@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/London57/todo-app/internal/controller/http/error"
-	"github.com/London57/todo-app/pkg/jwtutil"
+	"github.com/London57/todo-app/internal/domain/jwtutil"
 	"github.com/gin-gonic/gin"
 )
 

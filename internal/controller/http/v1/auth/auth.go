@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -122,7 +124,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 
 	userOAuth2 := signup.SignUpOAuth2Request{}
 	if err = json.NewDecoder(resp.Body).Decode(&userOAuth2); err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "failedto decode user ingo")
+		error.ErrorResponse(r, http.StatusInternalServerError, "failedto decode user info")
 		return
 	}
 
@@ -133,24 +135,33 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 		Password: "",
 	}
 
-	user_from_bd, err := c.GetUserByEmail(r, user.Email)
-	if err == nil && (user_from_bd != domain.User{}) {
-		error.ErrorResponse(r, http.StatusConflict, "user with this email already exists")
-		return
-	}
-	id, err := c.CreateUser(r, user)
+	var domain_user domain.User
+	database_user, err := c.GetUserByEmail(r, user.Email)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		id, err := c.CreateUser(r, user)
+		if err != nil {
+			error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+			return
+		}
 
-	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+		domain_user = domain.User{
+			ID:       id,
+			Name:     user.Name,
+			Username: user.Username,
+			Password: user.Password,
+		}
+	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		error.ErrorResponse(r, http.StatusInternalServerError, "server database error")
 		return
+	} else { //if user with this email exists
+		domain_user = domain.User{
+			ID:       database_user.ID,
+			Email:    database_user.Email,
+			Username: database_user.Username,
+			Password: database_user.Password,
+		}
 	}
 
-	domain_user := domain.User{
-		ID:       id,
-		Name:     user.Name,
-		Username: user.Username,
-		Password: user.Password,
-	}
 	access_token, err := c.CreateAccessToken(
 		domain_user, c.env.JWT.AccessTokenSecret, c.env.JWT.AccessTokenExpiryHour,
 	)
