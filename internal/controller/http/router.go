@@ -22,6 +22,7 @@ func NewRouter(app *gin.Engine, c *v1.V1, env *config.Config) {
 
 	lists := apiV1Group.Group("/lists")
 	lists.Use(middleware.JwtAuthMiddleware(env.JWT.AccessTokenSecret))
+	lists.Use(middleware.RecoveryMiddleware(c.List.L))
 	{
 		lists.POST("/", c.List.DeleteList)
 		lists.GET("/", c.List.GetAllLists)

@@ -3,7 +3,7 @@ package error
 import "github.com/gin-gonic/gin"
 
 type error struct {
-	Message string `json:"message"`
+	Message string            `json:"message"`
 	Details map[string]string `json:"details"`
 }
 

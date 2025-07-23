@@ -6,3 +6,9 @@ type ListController struct {
 	common.BaseController
 	// uc
 }
+
+func New(bC common.BaseController) ListController {
+	return ListController{
+		BaseController: bC,
+	}
+}

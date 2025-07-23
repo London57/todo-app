@@ -2,57 +2,79 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"os"
 
-	"github.com/caarlos0/env/v11"
+	"github.com/BurntSushi/toml"
+	"github.com/joho/godotenv"
 )
 
 type (
 	Config struct {
-		HTTP   HTTP
-		Log    Log
-		PG     PG
-		JWT    JWT
-		OAuth2 OAuth2
+		App    App    `toml:"app"`
+		API    API    `toml:"api"`
+		Log    Log    `toml:"log"`
+		DB     DB     `toml:"db"`
+		JWT    JWT    `toml:"jwt"`
+		OAuth2 OAuth2 `toml:"oauth2"`
 	}
 
-	HTTP struct {
-		Port           int    `env:"HTTP_PORT,required"`
-		IP             string `env:"HTTP_IP"`
-		Schema         string `env:"HTTP_SCHEMA"`
-		UsePreforkMode bool   `env:"HTTP_USE_PREFORK_MODE,required"`
+	App struct {
+		Mode string `toml:"mode"`
+	}
+	API struct {
+		Port   int    `toml:"port"`
+		Host   string `toml:"host"`
+		Schema string `toml:"schema"`
 	}
 
-	PG struct {
-		PoolMax int    `env:"PG_POOL_MAX,required"`
-		URL     string `env:"PG_URL,required"`
+	DB struct {
+		PoolMax  int    `toml:"pool_max"`
+		Host     string `toml:"host"`
+		DataBase string `toml:"database"`
+		User     string `toml:"user"`
+		Password string `toml:"password"`
+		Port     int    `toml:"port"`
 	}
 
 	Log struct {
-		Level int `env:"LOG_LEVEL,required"`
+		Level string `toml:"level"`
 	}
 
 	JWT struct {
-		AccessTokenExpiryHour  int    `env:"ACCESS_TOKEN_EXPIRY_HOUR"`
-		RefreshTokenExpiryHour int    `env:"REFRESH_TOKEN_EXPIRY_HOUR"`
-		AccessTokenSecret      string `env:"ACCESS_TOKEN_SECRET"`
-		RefreshTokenSecret     string `env:"REFRESH_TOKEN_SECRET"`
+		AccessTokenExpiryHour  int    `toml:"access_token_expiry_hour"`
+		RefreshTokenExpiryHour int    `toml:"refresh_token_expiry_hour"`
+		AccessTokenSecret      string `toml:"access_token_secret"`
+		RefreshTokenSecret     string `toml:"refresh_token_secret"`
 	}
 	OAuth2 struct {
-		GorillaSession struct {
-			Key string `env:"GORILLA_SESSION_KEY,required"`
-		}
-		Google struct {
-			GoogleClientId     string `env:"GOOGLE_CLIENT_ID,required"`
-			GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET,required"`
-		}
-		OAuthStateString string `env:"OAUTH_STATE_STRING"`
+		Google           Google `toml:"google"`
+		OAuthStateString string `toml:"state_string"`
+	}
+	Google struct {
+		GoogleClientId     string `toml:"client_id"`
+		GoogleClientSecret string `toml:"client_secret"`
 	}
 )
 
 func NewConfig() (*Config, error) {
 	cfg := &Config{}
-	if err := env.Parse(cfg); err != nil {
-		return nil, fmt.Errorf("config error: %w", err)
+
+	err := godotenv.Load("config/.env")
+	if err != nil {
+		log.Fatal("failed to load .env file")
+	}
+
+	tomlCfg, err := os.ReadFile("config/dev.toml")
+	if err != nil {
+		log.Fatal("failed to load toml config")
+	}
+	tomlCfgStr := os.Expand(string(tomlCfg), func(key string) string {
+		return os.Getenv(key)
+	})
+
+	if _, err := toml.Decode(tomlCfgStr, cfg); err != nil {
+		log.Fatal(fmt.Errorf("failed to decode TOML: %w", err))
 	}
 
 	return cfg, nil

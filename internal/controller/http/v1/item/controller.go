@@ -8,3 +8,9 @@ type ItemController struct {
 	common.BaseController
 	// uc
 }
+
+func New(bC common.BaseController) ItemController {
+	return ItemController{
+		BaseController: bC,
+	}
+}
