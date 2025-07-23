@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/London57/todo-app/pkg/logger"
 	"github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -25,7 +26,7 @@ type Postgres struct {
 	Pool    *pgxpool.Pool
 }
 
-func New(url string, opts ...Option) (*Postgres, error) {
+func New(l logger.Interface, url string, opts ...Option) (*Postgres, error) {
 	pg := &Postgres{
 		maxPoolSize: _defaultMaxPoolSize,
 		connAttepts: _defaultConnAttempts,
@@ -58,7 +59,7 @@ func New(url string, opts ...Option) (*Postgres, error) {
 	if err != nil {
 		return nil, fmt.Errorf("postgres - New - connAttempts == 0: %w", err)
 	}
-
+	l.Info("db started successfully")
 	return pg, nil
 }
 
