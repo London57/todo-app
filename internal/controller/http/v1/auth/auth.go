@@ -71,7 +71,6 @@ func (c *AuthController) SignIn(r *gin.Context) {}
 var oauthConfig *oauth2.Config
 
 func (c *AuthController) OAuth2(r *gin.Context) {
-	var config *oauth2.Config
 	provider, ok := r.Params.Get("provider")
 
 	if !ok {
@@ -83,10 +82,10 @@ func (c *AuthController) OAuth2(r *gin.Context) {
 		oauthConfig = InitGoogleProvider(
 			c.env.OAuth2.Google.GoogleClientId,
 			c.env.OAuth2.Google.GoogleClientSecret,
-			c.env.HTTP.Schema+c.env.HTTP.IP+":"+strconv.Itoa(c.env.HTTP.Port)+"api/v1/auth/google/callback",
+			c.env.API.Schema+c.env.API.Host+":"+strconv.Itoa(c.env.API.Port)+"/api/v1/auth/google/callback",
 		)
 	}
-	url := config.AuthCodeURL(c.env.OAuth2.OAuthStateString)
+	url := oauthConfig.AuthCodeURL(c.env.OAuth2.OAuthStateString)
 	r.Redirect(http.StatusFound, url)
 
 }

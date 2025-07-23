@@ -12,6 +12,6 @@ type AuthController struct {
 	env *config.Config
 }
 
-func NewAuthController(b common.BaseController, sauc signup.SignUpUseCase, env *config.Config) *AuthController {
-	return &AuthController{b, sauc, env}
+func NewAuthController(b common.BaseController, sauc signup.SignUpUseCase, env *config.Config) AuthController {
+	return AuthController{b, sauc, env}
 }

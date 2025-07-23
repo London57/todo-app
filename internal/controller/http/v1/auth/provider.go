@@ -6,8 +6,7 @@ import (
 )
 
 func InitGoogleProvider(clientId, clientSecret, redirectUrl string) *oauth2.Config {
-	var oauthConfig *oauth2.Config
-	oauthConfig = &oauth2.Config{
+	oauthConfig := &oauth2.Config{
 		RedirectURL:  redirectUrl,
 		ClientID:     clientId,
 		ClientSecret: clientSecret,
