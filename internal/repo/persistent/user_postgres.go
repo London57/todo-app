@@ -7,6 +7,7 @@ import (
 	"github.com/London57/todo-app/internal/domain"
 	"github.com/London57/todo-app/pkg/postgres"
 	"github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 )
 
 type UserRepo struct {
@@ -17,7 +18,7 @@ func New(pg *postgres.Postgres) *UserRepo {
 	return &UserRepo{pg}
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (int, error) {
+func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
 	stmt, args, err := r.Builder.
 		Insert("user").
 		Columns("name", "username", "email", "password").
@@ -25,13 +26,13 @@ func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (int, error
 		Suffix("returning id").
 		ToSql()
 	if err != nil {
-		return 0, fmt.Errorf("UserRepo - CreateUser - r.Builder: %w", err)
+		return uuid.Nil, fmt.Errorf("UserRepo - CreateUser - r.Builder: %w", err)
 	}
 
-	var id int
+	var id uuid.UUID
 	err = r.Pool.QueryRow(ctx, stmt, args...).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("UserRepo - CreateUser - r.Pool.QueryRow: %w", err)
+		return uuid.Nil, fmt.Errorf("UserRepo - CreateUser - r.Pool.QueryRow: %w", err)
 	}
 
 	return id, nil

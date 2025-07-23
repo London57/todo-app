@@ -8,30 +8,31 @@ import (
 	"github.com/London57/todo-app/internal/domain/jwtutil"
 	"github.com/London57/todo-app/internal/domain/password"
 	"github.com/London57/todo-app/internal/repo"
+	"github.com/google/uuid"
 )
 
 type SignUpUseCase struct {
 	repo repo.UserRepo
 }
 
-func New(r repo.UserRepo) *SignUpUseCase {
-	return &SignUpUseCase{
+func New(r repo.UserRepo) SignUpUseCase {
+	return SignUpUseCase{
 		repo: r,
 	}
 }
 
-func (uc *SignUpUseCase) CreateUser(context context.Context, user domain.User) (int, error) {
+func (uc *SignUpUseCase) CreateUser(context context.Context, user domain.User) (uuid.UUID, error) {
 	var err error
 	if user.Password != "" {
 		user.Password, err = password.GeneratePasswordHash(user.Password)
 		if err != nil {
-			return 0, err
+			return uuid.Nil, err
 		}
 	}
 
 	id, err := uc.repo.CreateUser(context, user)
 	if err != nil {
-		return 0, fmt.Errorf("UserUseCase - CreateUser - repo.CreateUser: %w", err)
+		return uuid.Nil, fmt.Errorf("UserUseCase - CreateUser - repo.CreateUser: %w", err)
 	}
 	return id, nil
 }
