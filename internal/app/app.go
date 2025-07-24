@@ -39,13 +39,13 @@ func Run(cfg *config.Config) {
 	pg, err := postgres.New(
 		l,
 		fmt.Sprintf(
-			"postgres://%s:%s@%s:%d/%s?pool_max=%d",
+			"postgres://%s:%s@%s:%d/%s?sslmode=%s",
 			db.User,
 			db.Password,
 			db.Host,
 			db.Port,
 			db.DataBase,
-			db.PoolMax,
+			db.SSLMode,
 		),
 	)
 	if err != nil {

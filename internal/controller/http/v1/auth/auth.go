@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -150,7 +151,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 			Password: user.Password,
 		}
 	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		error.ErrorResponse(r, http.StatusInternalServerError, "server database error")
+		error.ErrorResponse(r, http.StatusInternalServerError, fmt.Errorf("database error: %w", err).Error())
 		return
 	} else { //if user with this email exists
 		domain_user = domain.User{

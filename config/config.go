@@ -35,6 +35,7 @@ type (
 		User     string `toml:"user"`
 		Password string `toml:"password"`
 		Port     int    `toml:"port"`
+		SSLMode  string `toml:"sslmode"`
 	}
 
 	Log struct {
@@ -57,7 +58,7 @@ type (
 	}
 )
 
-func NewConfig() (*Config, error) {
+func NewConfig() *Config {
 	cfg := &Config{}
 
 	err := godotenv.Load("config/.env")
@@ -77,5 +78,5 @@ func NewConfig() (*Config, error) {
 		log.Fatal(fmt.Errorf("failed to decode TOML: %w", err))
 	}
 
-	return cfg, nil
+	return cfg
 }

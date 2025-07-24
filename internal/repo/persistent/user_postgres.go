@@ -20,7 +20,7 @@ func New(pg *postgres.Postgres) *UserRepo {
 
 func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
 	stmt, args, err := r.Builder.
-		Insert("user").
+		Insert("\"user\"").
 		Columns("name", "username", "email", "password").
 		Values(user.Name, user.Username, user.Email, user.Password).
 		Suffix("returning id").
@@ -41,7 +41,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID,
 func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.User, error) {
 	stmt, args, err := r.Builder.
 		Select("*").
-		From("user").
+		From("\"user\"").
 		Where(squirrel.Eq{"email": email}).
 		Limit(1).
 		ToSql()
