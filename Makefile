@@ -14,3 +14,12 @@ run-postgres:
 		-d postgres
 
 .PHONY: run-postgres
+
+run-pgadmin:
+	docker run --rm --name pgadmin-dev \
+		-e PGADMIN_DEFAULT_EMAIL=gleb.yurov.1998@mail.ru \
+		-e PGADMIN_DEFAULT_PASSWORD=$(DB_PASS) \
+		-p 82:80 \
+		-d dpage/pgadmin4
+
+.PHONY: run-postgres

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,22 +20,23 @@ import (
 func (c *AuthController) SignUp(r *gin.Context) {
 	var user signup.SignUpRequest
 	if err := r.ShouldBindJSON(&user); err != nil {
-		error.ErrorResponse(r, http.StatusBadRequest, "invalid request body")
+		error.ErrorResponse(r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 	user_from_bd, err := c.GetUserByEmail(r, user.Email)
 	if err == nil && (user_from_bd != domain.User{}) {
-		error.ErrorResponse(r, http.StatusConflict, "user with this email already exists")
+		error.ErrorResponse(r, http.StatusConflict, "user with this email already exists", "")
 		return
 	}
 
-	id, err := c.CreateUser(r, domain.User{
+	id, err := c.CreateUser(r, signup.SignUpRequest{
 		Name:     user.Name,
 		Username: user.Username,
 		Password: user.Password,
+		Email:    user.Email,
 	})
 	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+		error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems", err.Error())
 		return
 	}
 	domain_user := domain.User{
@@ -48,7 +48,7 @@ func (c *AuthController) SignUp(r *gin.Context) {
 		domain_user, c.env.JWT.AccessTokenSecret, c.env.JWT.AccessTokenExpiryHour,
 	)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error")
+		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error", err.Error())
 		return
 	}
 
@@ -56,7 +56,7 @@ func (c *AuthController) SignUp(r *gin.Context) {
 		domain_user, c.env.JWT.RefreshTokenSecret, c.env.JWT.RefreshTokenExpiryHour,
 	)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error")
+		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error", err.Error())
 		return
 	}
 	signupResponse := signup.SignUpResponse{
@@ -75,7 +75,7 @@ func (c *AuthController) OAuth2(r *gin.Context) {
 	provider, ok := r.Params.Get("provider")
 
 	if !ok {
-		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param")
+		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param", "")
 		return
 	}
 
@@ -94,19 +94,19 @@ func (c *AuthController) OAuth2(r *gin.Context) {
 func (c *AuthController) OAuth2Callback(r *gin.Context) {
 	provider, ok := r.Params.Get("provider")
 	if !ok {
-		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param")
+		error.ErrorResponse(r, http.StatusBadRequest, "not specified provider param", "")
 		return
 	}
 
 	state := r.Query("state")
 	if state != c.env.OAuth2.OAuthStateString {
-		error.ErrorResponse(r, http.StatusBadRequest, "invalid oauth state")
+		error.ErrorResponse(r, http.StatusBadRequest, "invalid oauth state", "")
 		return
 	}
 	code := r.Query("code")
 	token, err := oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusBadRequest, "failed to exchange token")
+		error.ErrorResponse(r, http.StatusBadRequest, "failed to exchange token", err.Error())
 		return
 	}
 
@@ -116,7 +116,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 	if strings.ToLower(provider) == "google" {
 		resp, err = client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 		if err != nil {
-			error.ErrorResponse(r, http.StatusInternalServerError, "failed to get user info")
+			error.ErrorResponse(r, http.StatusInternalServerError, "failed to get user info", err.Error())
 			return
 		}
 	}
@@ -124,11 +124,11 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 
 	userOAuth2 := signup.SignUpOAuth2Request{}
 	if err = json.NewDecoder(resp.Body).Decode(&userOAuth2); err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "failedto decode user info")
+		error.ErrorResponse(r, http.StatusInternalServerError, "failedto decode user info", err.Error())
 		return
 	}
 
-	user := domain.User{
+	user := signup.SignUpRequest{
 		Name:     userOAuth2.Name,
 		Email:    userOAuth2.Email,
 		Username: "",
@@ -140,7 +140,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		id, err := c.CreateUser(r, user)
 		if err != nil {
-			error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems")
+			error.ErrorResponse(r, http.StatusInternalServerError, "server create user problems", err.Error())
 			return
 		}
 
@@ -151,7 +151,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 			Password: user.Password,
 		}
 	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		error.ErrorResponse(r, http.StatusInternalServerError, fmt.Errorf("database error: %w", err).Error())
+		error.ErrorResponse(r, http.StatusInternalServerError, "database error", err.Error())
 		return
 	} else { //if user with this email exists
 		domain_user = domain.User{
@@ -166,7 +166,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 		domain_user, c.env.JWT.AccessTokenSecret, c.env.JWT.AccessTokenExpiryHour,
 	)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error")
+		error.ErrorResponse(r, http.StatusInternalServerError, "create access jwt token error", err.Error())
 		return
 	}
 
@@ -174,7 +174,7 @@ func (c *AuthController) OAuth2Callback(r *gin.Context) {
 		domain_user, c.env.JWT.RefreshTokenSecret, c.env.JWT.RefreshTokenExpiryHour,
 	)
 	if err != nil {
-		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error")
+		error.ErrorResponse(r, http.StatusInternalServerError, "create refresh jwt token error", err.Error())
 		return
 	}
 	signupResponse := signup.SignUpResponse{

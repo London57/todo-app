@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/London57/todo-app/internal/domain"
+	"github.com/London57/todo-app/internal/domain/signup"
 	"github.com/London57/todo-app/pkg/postgres"
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -18,7 +19,7 @@ func New(pg *postgres.Postgres) *UserRepo {
 	return &UserRepo{pg}
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
+func (r *UserRepo) CreateUser(ctx context.Context, user signup.SignUpRequest) (uuid.UUID, error) {
 	stmt, args, err := r.Builder.
 		Insert("\"user\"").
 		Columns("name", "username", "email", "password").

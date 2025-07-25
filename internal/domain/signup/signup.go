@@ -15,9 +15,8 @@ type (
 		Password string `json:"password" validate:"required,max=15,min=9"`
 	}
 	SignUpOAuth2Request struct {
-		Name     string `json:"name" validate:"required,max=20"`
-		Username string `json:"username" validate:"max=20,al"`
-		Email    string `json:"email" validate:"required,email"`
+		Name  string `json:"name" validate:"required,max=20"`
+		Email string `json:"email" validate:"required,email"`
 	}
 	SignUpResponse struct {
 		AccessToken  string `json:"accessToken"`
@@ -27,7 +26,7 @@ type (
 
 type (
 	SignUpUseCase interface {
-		CreateUser(context.Context, domain.User) (uuid.UUID, error)
+		CreateUser(context.Context, SignUpRequest) (uuid.UUID, error)
 		GetUserByEmail(context.Context, string) (domain.User, error)
 		CreateAccessToken(domain.User, string, int) (string, error)
 		CreateRefreshToken(domain.User, string, int) (string, error)

@@ -27,6 +27,6 @@ func RecoveryMiddleware(l logger.Interface) gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, err any) {
 		panic := buildPanic(c, err)
 		l.Error(panic)
-		error.ErrorResponse(c, http.StatusInternalServerError, "internal server error")
+		error.ErrorResponse(c, http.StatusInternalServerError, "internal server error", panic)
 	})
 }

@@ -19,16 +19,16 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 			if authorized {
 				userID, err := jwtutil.ExtractIDFromToken(authToken, secret)
 				if err != nil {
-					error.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+					error.ErrorResponse(c, http.StatusUnauthorized, "failed to get ID from token", err.Error())
 					return
 				}
 				c.Set("userID", userID)
 				c.Next()
 				return
 			}
-			error.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+			error.ErrorResponse(c, http.StatusUnauthorized, "len authorazion header 2, but error", err.Error())
 			return
 		}
-		error.ErrorResponse(c, http.StatusUnauthorized, "Not authorized")
+		error.ErrorResponse(c, http.StatusUnauthorized, "Not authorized", "")
 	}
 }
