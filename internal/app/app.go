@@ -19,7 +19,8 @@ import (
 	"github.com/London57/todo-app/pkg/httpserver"
 	"github.com/London57/todo-app/pkg/logger"
 	"github.com/London57/todo-app/pkg/postgres"
-	"github.com/London57/todo-app/pkg/validator"
+	validate "github.com/London57/todo-app/pkg/validator"
+	"github.com/gin-gonic/gin/binding"
 )
 
 func Run(cfg *config.Config) {
@@ -54,11 +55,13 @@ func Run(cfg *config.Config) {
 	defer pg.Close()
 
 	httpserver := httpserver.New(httpserver.Address(cfg.API.Host, cfg.API.Port))
+	binding.Validator = &validate.CustomValidator{
+		V: validate.NewValidator(),
+	}
 
 	userRepo := persistent.New(pg)
 
 	signupUC := signup.New(userRepo)
-	
 
 	validator := validate.NewValidator()
 

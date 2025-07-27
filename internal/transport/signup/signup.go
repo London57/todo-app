@@ -32,7 +32,7 @@ type (
 func IsEmail(str string) bool {
 	ai := strings.Index(str, "@")
 	di := strings.Index(str, ".")
-	if ai > 0 && di > ai + 1 && di < utf8.RuneCountInString(str) - 1 {
+	if ai > 0 && di > ai+1 && di < utf8.RuneCountInString(str)-1 {
 		return true
 	}
 	return false
