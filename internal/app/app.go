@@ -9,7 +9,7 @@ import (
 
 	"github.com/London57/todo-app/config"
 	"github.com/London57/todo-app/internal/controller/http"
-	"github.com/London57/todo-app/internal/controller/http/common"
+	"github.com/London57/todo-app/internal/controller/http/common/controller"
 	v1 "github.com/London57/todo-app/internal/controller/http/v1"
 	"github.com/London57/todo-app/internal/controller/http/v1/auth"
 	"github.com/London57/todo-app/internal/controller/http/v1/item"
@@ -19,7 +19,7 @@ import (
 	"github.com/London57/todo-app/pkg/httpserver"
 	"github.com/London57/todo-app/pkg/logger"
 	"github.com/London57/todo-app/pkg/postgres"
-	"github.com/go-playground/validator/v10"
+	"github.com/London57/todo-app/pkg/validator"
 )
 
 func Run(cfg *config.Config) {
@@ -58,16 +58,17 @@ func Run(cfg *config.Config) {
 	userRepo := persistent.New(pg)
 
 	signupUC := signup.New(userRepo)
+	
 
-	validator := validator.New()
+	validator := validate.NewValidator()
 
-	bC := common.New(l, validator)
+	bC := controller.New(l, validator)
 	authC := auth.NewAuthController(bC, &signupUC, cfg)
-	listC := list.New(bC)
-	itemC := item.New(bC)
-	v1 := v1.New(authC, listC, itemC, cfg)
+	listC := list.NewListController(bC)
+	itemC := item.NewItemController(bC)
+	v1 := v1.New(authC, listC, itemC)
 
-	http.NewRouter(httpserver.App, &v1, cfg)
+	http.NewRouter(httpserver.App, v1, cfg)
 	httpserver.HTTPServer.Handler = httpserver.App
 
 	httpserver.Start()
@@ -87,5 +88,4 @@ func Run(cfg *config.Config) {
 	if err != nil {
 		l.Error(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err).Error())
 	}
-
 }

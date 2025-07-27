@@ -1,15 +1,14 @@
 package item
 
 import (
-	"github.com/London57/todo-app/internal/controller/http/common"
+	"github.com/London57/todo-app/internal/controller/http/common/controller"
 )
 
 type ItemController struct {
-	common.BaseController
-	// uc
+	controller.BaseController
 }
 
-func New(bC common.BaseController) ItemController {
+func NewItemController(bC controller.BaseController) ItemController {
 	return ItemController{
 		BaseController: bC,
 	}

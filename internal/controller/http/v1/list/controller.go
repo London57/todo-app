@@ -1,13 +1,14 @@
 package list
 
-import "github.com/London57/todo-app/internal/controller/http/common"
+import (
+	"github.com/London57/todo-app/internal/controller/http/common/controller"
+)
 
 type ListController struct {
-	common.BaseController
-	// uc
+	controller.BaseController
 }
 
-func New(bC common.BaseController) ListController {
+func NewListController(bC controller.BaseController) ListController {
 	return ListController{
 		BaseController: bC,
 	}

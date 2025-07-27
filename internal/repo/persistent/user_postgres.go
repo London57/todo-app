@@ -3,9 +3,9 @@ package persistent
 import (
 	"context"
 	"fmt"
-
+	
 	"github.com/London57/todo-app/internal/domain"
-	"github.com/London57/todo-app/internal/domain/signup"
+	"github.com/London57/todo-app/internal/transport/signup"
 	"github.com/London57/todo-app/pkg/postgres"
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -44,7 +44,6 @@ func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.Use
 		Select("*").
 		From("\"user\"").
 		Where(squirrel.Eq{"email": email}).
-		Limit(1).
 		ToSql()
 	if err != nil {
 		return domain.User{}, err
@@ -54,6 +53,22 @@ func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.Use
 	err = r.Pool.QueryRow(ctx, stmt, args...).Scan(&user)
 	if err != nil {
 		return domain.User{}, err
+	}
+	return user, nil
+}
+
+func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
+	stmt, args, err := r.Builder.Select("*").
+    From("\"user\"").
+		Where(squirrel.Eq{"username": username}).
+		ToSql()
+	if err != nil {
+		return domain.User{}, err
+	}
+	var user domain.User
+	err = r.Pool.QueryRow(ctx, stmt, args).Scan(&user)
+	if err != nil {
+		return domain.User{}, nil
 	}
 	return user, nil
 }

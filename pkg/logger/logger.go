@@ -5,6 +5,8 @@ import (
 	"log/slog"
 )
 
+//go:generate mockgen -source=logger.go -destination=mocks/mock.go
+
 type Interface interface {
 	Debug(message string, args ...any)
 	Info(message string, args ...any)

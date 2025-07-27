@@ -1,4 +1,4 @@
-package common
+package controller
 
 import (
 	"github.com/London57/todo-app/pkg/logger"
