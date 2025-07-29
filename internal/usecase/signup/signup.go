@@ -7,8 +7,8 @@ import (
 	"github.com/London57/todo-app/internal/domain"
 	"github.com/London57/todo-app/internal/domain/jwtutil"
 	"github.com/London57/todo-app/internal/domain/password"
-	"github.com/London57/todo-app/internal/transport/signup"
 	"github.com/London57/todo-app/internal/repo"
+	"github.com/London57/todo-app/internal/transport/signup"
 	"github.com/google/uuid"
 )
 
@@ -31,7 +31,7 @@ func (uc *SignUpUseCase) CreateUser(context context.Context, user signup.SignUpR
 		}
 	}
 
-	id, err := uc.repo.CreateUser(context, user)
+	id, err := uc.repo.Create(context, user)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("UserUseCase - CreateUser - repo.CreateUser: %w", err)
 	}
@@ -39,7 +39,7 @@ func (uc *SignUpUseCase) CreateUser(context context.Context, user signup.SignUpR
 }
 
 func (uc *SignUpUseCase) GetUserByEmail(context context.Context, email string) (domain.User, error) {
-	user, err := uc.repo.GetUserByEmail(context, email)
+	user, err := uc.repo.GetByEmail(context, email)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -47,7 +47,7 @@ func (uc *SignUpUseCase) GetUserByEmail(context context.Context, email string) (
 }
 
 func (uc *SignUpUseCase) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
-	user, err := uc.repo.GetUserByUsername(ctx, username)
+	user, err := uc.repo.GetByUsername(ctx, username)
 	if err != nil {
 		return domain.User{}, err
 	}
