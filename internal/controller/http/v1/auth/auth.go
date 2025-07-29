@@ -28,12 +28,12 @@ func (c *AuthController) SignUp(r *gin.Context) {
 	if err == nil && (user_from_bd != domain.User{}) {
 		er.ErrorResponse(r, http.StatusConflict, "user with this email already exists", "")
 		return
-	} 
+	}
 	if err != nil {
 		er.ErrorResponse(r, http.StatusInternalServerError, "server database error", err.Error())
 		return
 	}
-	
+
 	id, err := c.CreateUser(r, signup.SignUpRequest{
 		Name:     user.Name,
 		Username: user.Username,
@@ -79,7 +79,7 @@ func (c *AuthController) SignIn(r *gin.Context) {
 	}
 	var (
 		user domain.User
-		err error
+		err  error
 	)
 
 	if signup.IsEmail(userSignIn.UsernameOrEmail) {
@@ -123,7 +123,7 @@ func (c *AuthController) SignIn(r *gin.Context) {
 		return
 	}
 	resp := signup.SignUpResponse{
-		AccessToken: accessToken,
+		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
 	r.JSON(http.StatusAccepted, resp)
@@ -145,10 +145,12 @@ func (c *AuthController) OAuth2(r *gin.Context) {
 			c.env.OAuth2.Google.GoogleClientSecret,
 			c.env.API.Schema+c.env.API.Host+":"+strconv.Itoa(c.env.API.Port)+"/api/v1/auth/google/callback",
 		)
+	} else {
+		er.ErrorResponse(r, http.StatusBadRequest, "this provider not supported", "")
+		return
 	}
 	url := oauthConfig.AuthCodeURL(c.env.OAuth2.OAuthStateString)
 	r.Redirect(http.StatusFound, url)
-
 }
 
 func (c *AuthController) OAuth2Callback(r *gin.Context) {
