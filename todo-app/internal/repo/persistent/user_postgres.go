@@ -3,7 +3,7 @@ package persistent
 import (
 	"context"
 	"fmt"
-	
+
 	"github.com/London57/todo-app/internal/domain"
 	"github.com/London57/todo-app/internal/transport/signup"
 	"github.com/London57/todo-app/pkg/postgres"
@@ -15,11 +15,11 @@ type UserRepo struct {
 	*postgres.Postgres
 }
 
-func New(pg *postgres.Postgres) *UserRepo {
+func NewUserRepo(pg *postgres.Postgres) *UserRepo {
 	return &UserRepo{pg}
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, user signup.SignUpRequest) (uuid.UUID, error) {
+func (r *UserRepo) Create(ctx context.Context, user signup.SignUpRequest) (uuid.UUID, error) {
 	stmt, args, err := r.Builder.
 		Insert("\"user\"").
 		Columns("name", "username", "email", "password").
@@ -39,7 +39,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user signup.SignUpRequest) (u
 	return id, nil
 }
 
-func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.User, error) {
+func (r *UserRepo) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	stmt, args, err := r.Builder.
 		Select("*").
 		From("\"user\"").
@@ -57,7 +57,7 @@ func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (domain.Use
 	return user, nil
 }
 
-func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
+func (r *UserRepo) GetByUsername(ctx context.Context, username string) (domain.User, error) {
 	stmt, args, err := r.Builder.Select("*").
     From("\"user\"").
 		Where(squirrel.Eq{"username": username}).
@@ -66,7 +66,7 @@ func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (doma
 		return domain.User{}, err
 	}
 	var user domain.User
-	err = r.Pool.QueryRow(ctx, stmt, args).Scan(&user)
+	err = r.Pool.QueryRow(ctx, stmt, args...).Scan(&user)
 	if err != nil {
 		return domain.User{}, nil
 	}

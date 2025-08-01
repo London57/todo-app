@@ -10,7 +10,7 @@ import (
 )
 
 func (h *ItemController) CreateItem(r *gin.Context) {
-	id, ok := r.Get(middleware.UserID)
+	_, ok := r.Get(middleware.UserID)
 	if !ok {
 		er.ErrorResponse(r, http.StatusInternalServerError, "user id not found", "")
 		return

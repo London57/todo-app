@@ -17,10 +17,10 @@ type (
 	}
 
 	TodoListRepo interface {
-		CreateList(userID uuid.UUID, list todo_list.TodoListRequest) (int, error)
-		GetAll(userID uuid.UUID) ([]domain.TodoList, error)
-		GetById(userID uuid.UUID, listID int) (domain.TodoList, error)
-		Delete(userID uuid.UUID, listID int) error
-		Update(userID uuid.UUID, input todo_list.UpdateListRequest) error
+		Create(context context.Context, userID uuid.UUID, list todo_list.TodoListRequest) (int, error)
+		GetAll(context context.Context, userID uuid.UUID) ([]domain.TodoList, error)
+		GetById(context context.Context, userID uuid.UUID, listID int) (domain.TodoList, error)
+		Delete(context context.Context, userID uuid.UUID, listID int) error
+		Update(context context.Context, userID uuid.UUID, input todo_list.UpdateListRequest) error
 	}
 )

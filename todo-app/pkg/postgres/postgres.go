@@ -17,13 +17,14 @@ const (
 	_defaultConnTimeout  = time.Second
 )
 
+
 type Postgres struct {
 	maxPoolSize int
 	connAttepts int
 	connTimeout time.Duration
-
+	
 	Builder squirrel.StatementBuilderType
-	Pool    *pgxpool.Pool
+	Pool    Pool
 }
 
 func New(l logger.Interface, url string, opts ...Option) (*Postgres, error) {

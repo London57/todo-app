@@ -59,7 +59,7 @@ func Run(cfg *config.Config) {
 		V: validate.NewValidator(),
 	}
 
-	userRepo := persistent.New(pg)
+	userRepo := persistent.NewUserRepo(pg)
 
 	signupUC := signup.New(userRepo)
 

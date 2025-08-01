@@ -13,6 +13,7 @@ run-postgres:
 		-p 5432:5432 \
 		-d postgres
 
+	docker run --rm --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=postgres -e SSLMODE=disable -p 5432:5432 -d postgres
 .PHONY: run-postgres
 
 run-pgadmin:
